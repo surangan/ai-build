@@ -136,6 +136,14 @@ function normaliseUrl(url) {
   return `https://${trimmed}`;
 }
 
+function normaliseResourceUrl(url) {
+  const trimmed = String(url || '').trim();
+  if (!trimmed || trimmed === '#') return '';
+  if (/^(https?:|data:|mailto:)/i.test(trimmed)) return trimmed;
+  if (/^(\.?\.?\/|\/)/.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function escapeSvg(text) {
   return String(text || '').replace(/[&<>]/g, character => ({
     '&': '&amp;',
@@ -243,7 +251,7 @@ function mapProject(project, index) {
   const team = pick(row, ['Team', 'Team Name']) || row.team || `Team ${String(index + 1).padStart(2, '0')}`;
   const title = pick(row, ['Project Title', 'Title', 'Project']) || row.title || `${team} prototype`;
   const url = pick(row, ['Project URL', 'Prototype URL', 'URL', 'Link']) || row.url || '';
-  const image = pick(row, ['Image URL', 'Screenshot URL', 'Image', 'Screenshot']) || row.image || '';
+  const image = pick(row, ['Image URL', 'Screenshot URL', 'Image', 'Screenshot']) || row.image || challengeConfig.defaultProjectImage || '';
   const pitch = pick(row, ['Description', 'One-line Description', 'Pitch', 'One-sentence Pitch', 'Summary']) || row.pitch || 'Dummy text.';
   const id = slugify(`${team}-${title}`) || `project-${index + 1}`;
 
@@ -436,7 +444,7 @@ function renderProjects(projects, voteCounts = new Map(), resultsConfigured = fa
 
 async function loadProjects() {
   const projects = fallbackProjects();
-  const sheetUrl = normaliseUrl(challengeConfig.projectSheetCsvUrl);
+  const sheetUrl = normaliseResourceUrl(challengeConfig.projectDataCsvUrl || challengeConfig.projectSheetCsvUrl);
 
   renderProjects(projects);
 
