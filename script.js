@@ -18,14 +18,27 @@ filters.forEach(filter => {
 document.querySelectorAll('.copy-button').forEach(button => {
   button.addEventListener('click', async () => {
     const target = document.getElementById(button.dataset.copy);
+    const text = target.innerText;
+    let copied = false;
+
     try {
-      await navigator.clipboard.writeText(target.innerText);
-      const old = button.innerText;
-      button.innerText = 'Copied';
-      setTimeout(() => button.innerText = old, 1400);
+      await navigator.clipboard.writeText(text);
+      copied = true;
     } catch {
-      button.innerText = 'Select text';
+      const fallback = document.createElement('textarea');
+      fallback.value = text;
+      fallback.setAttribute('readonly', '');
+      fallback.style.position = 'fixed';
+      fallback.style.left = '-9999px';
+      document.body.appendChild(fallback);
+      fallback.select();
+      copied = document.execCommand('copy');
+      fallback.remove();
     }
+
+    const old = button.innerText;
+    button.innerText = copied ? 'Copied' : 'Select text';
+    setTimeout(() => button.innerText = old, 1400);
   });
 });
 
