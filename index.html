@@ -28,7 +28,6 @@
       <a href="#prompts">Prompts</a>
       <a href="#submit">Submit</a>
     </nav>
-    <a class="button button-small" href="#timer">Start building</a>
   </header>
 
   <main id="top">
@@ -154,8 +153,7 @@
       <div class="timer-panel">
         <div>
           <span class="pill">Hackathon timer</span>
-          <h2>Make the NUS Computing build time visible.</h2>
-          <p>Use the 70-minute build timer during the team sprint.</p>
+          <h2>Use the 70-minute build timer during the team sprint.</h2>
         </div>
 
         <div class="timer-card">
@@ -410,29 +408,63 @@ Then:
     </section>
 
     <section id="submit" class="section submit-section">
-      <div class="submit-panel">
-        <div>
+      <div class="submit-shell">
+        <div class="submit-intro">
           <span class="pill">Final step</span>
           <h2>Share your prototype</h2>
-          <p>Add your team name, one-sentence pitch and public demo link to the shared page before time is called.</p>
+          <p>Add your team name, project URL and image. Project cards open the prototype when clicked, and faculty can vote from the gallery.</p>
         </div>
 
-        <div class="submit-actions">
-          <a class="button disabled-link" href="#" aria-disabled="true" title="Replace this link in index.html">
-            Open submission document
-          </a>
-          <a class="button button-secondary disabled-link" href="#" aria-disabled="true" title="Replace this link in index.html">
-            Open voting form
-          </a>
-          <small>Organiser: replace these two placeholder links with your Google Doc and Google Form URLs.</small>
+        <div class="project-workspace">
+          <form id="projectForm" class="project-form">
+            <label>
+              <span>Team name</span>
+              <input id="teamName" name="teamName" type="text" placeholder="Team 07" required>
+            </label>
+            <label>
+              <span>Project title</span>
+              <input id="projectTitle" name="projectTitle" type="text" placeholder="AI Office Hours" required>
+            </label>
+            <label>
+              <span>Project URL</span>
+              <input id="projectUrl" name="projectUrl" type="url" placeholder="https://example.com" required>
+            </label>
+            <label>
+              <span>Image URL</span>
+              <input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/screenshot.png">
+            </label>
+            <label class="file-field">
+              <span>Or upload image</span>
+              <input id="projectImage" name="projectImage" type="file" accept="image/*">
+            </label>
+            <label class="full-field">
+              <span>One-sentence pitch</span>
+              <textarea id="projectPitch" name="projectPitch" rows="3" placeholder="What does the prototype help people do?"></textarea>
+            </label>
+            <div class="form-actions">
+              <button class="button" type="submit">Add project</button>
+              <button id="clearProjects" class="button button-ghost" type="button">Reset gallery</button>
+            </div>
+            <p class="form-note">Static demo: entries and votes are saved in this browser. Use a backend such as Supabase or Firebase for shared event-wide uploads, IP checks and live vote totals.</p>
+          </form>
+
+          <div class="vote-panel">
+            <div>
+              <span class="pill">Live gallery</span>
+              <h3>Project votes</h3>
+              <p id="voteStatus">Add projects, then vote for the one you want to see continue.</p>
+            </div>
+            <div id="voteResults" class="vote-results" aria-live="polite"></div>
+          </div>
         </div>
+
+        <div id="projectGallery" class="project-gallery" aria-live="polite"></div>
       </div>
     </section>
 
     <section class="section final-cta">
       <span class="eyebrow">NUS Computing Faculty Retreat Hackathon · Seventy minutes · Seventeen prototypes.</span>
       <h2>The future will not be explained.<br>It will be built.</h2>
-      <a class="button" href="#timer">Start the challenge</a>
     </section>
   </main>
 
