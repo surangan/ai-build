@@ -7,19 +7,20 @@ A self-contained static website for the NUS Computing Faculty Retreat Hackathon 
 - `index.html` — page content and structure
 - `styles.css` — visual design and responsive layout
 - `event-config.js` — 17 placeholder project rows and optional external data links
+- `projects.csv` — editable project gallery data
 - `script.js` — timer, filters, copy buttons and project gallery loading
 
 ## Customise before the event
 
-Open `event-config.js` and update the 17 `fallbackProjects` rows when final project details are ready. Each row supports:
+Open `projects.csv` and update the 17 rows when final project details are ready. Each row supports:
 
-- `team`
-- `title`
-- `url`
-- `image`
-- `pitch`
+- `Team`
+- `Title`
+- `Project URL`
+- `Image URL`
+- `Description`
 
-The current gallery intentionally uses dummy images, placeholder titles and dummy text.
+The current gallery intentionally uses the same dummy image, placeholder titles and dummy text. If a row has no image, the site uses the default placeholder image configured in `event-config.js`.
 
 You may also update:
 
