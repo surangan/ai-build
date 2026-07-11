@@ -346,7 +346,10 @@ Then:
           <h3>Prompt-to-web tools</h3>
           <p>Best for teams that want a polished interface with minimal setup.</p>
           <div class="tool-tags">
-            <span>Lovable</span><span>Bolt</span><span>v0</span><span>Replit</span>
+            <a href="https://lovable.dev/" target="_blank" rel="noopener noreferrer">Lovable</a>
+            <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer">Bolt</a>
+            <a href="https://v0.app/" target="_blank" rel="noopener noreferrer">v0</a>
+            <a href="https://replit.com/" target="_blank" rel="noopener noreferrer">Replit</a>
           </div>
         </div>
         <div class="tool-column">
@@ -354,7 +357,10 @@ Then:
           <h3>AI coding agents</h3>
           <p>Best for teams comfortable working with files, terminals and iterative development.</p>
           <div class="tool-tags">
-            <span>Codex</span><span>Claude Code</span><span>Cursor</span><span>Antigravity</span>
+            <a href="https://chatgpt.com/codex/" target="_blank" rel="noopener noreferrer">Codex</a>
+            <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener noreferrer">Claude Code</a>
+            <a href="https://cursor.com/" target="_blank" rel="noopener noreferrer">Cursor</a>
+            <a href="https://antigravity.google/" target="_blank" rel="noopener noreferrer">Antigravity</a>
           </div>
         </div>
         <div class="tool-column">
@@ -362,7 +368,10 @@ Then:
           <h3>General AI assistants</h3>
           <p>Best for shaping the concept, generating content, debugging and improving the pitch.</p>
           <div class="tool-tags">
-            <span>ChatGPT</span><span>Claude</span><span>Gemini</span><span>Perplexity</span>
+            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT</a>
+            <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">Claude</a>
+            <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">Gemini</a>
+            <a href="https://www.perplexity.ai/" target="_blank" rel="noopener noreferrer">Perplexity</a>
           </div>
         </div>
       </div>
@@ -412,48 +421,41 @@ Then:
         <div class="submit-intro">
           <span class="pill">Final step</span>
           <h2>Share your prototype</h2>
-          <p>Add your team name, project URL and image. Project cards open the prototype when clicked, and faculty can vote from the gallery.</p>
+          <p>Teams add their project details to the shared Google Sheet. The gallery reads from that sheet, opens project URLs from each image, and sends non-anonymous votes to a Google Form.</p>
         </div>
 
         <div class="project-workspace">
-          <form id="projectForm" class="project-form">
-            <label>
-              <span>Team name</span>
-              <input id="teamName" name="teamName" type="text" placeholder="Team 07" required>
-            </label>
-            <label>
-              <span>Project title</span>
-              <input id="projectTitle" name="projectTitle" type="text" placeholder="AI Office Hours" required>
-            </label>
-            <label>
-              <span>Project URL</span>
-              <input id="projectUrl" name="projectUrl" type="url" placeholder="https://example.com" required>
-            </label>
-            <label>
-              <span>Image URL</span>
-              <input id="imageUrl" name="imageUrl" type="url" placeholder="https://example.com/screenshot.png">
-            </label>
-            <label class="file-field">
-              <span>Or upload image</span>
-              <input id="projectImage" name="projectImage" type="file" accept="image/*">
-            </label>
-            <label class="full-field">
-              <span>One-sentence pitch</span>
-              <textarea id="projectPitch" name="projectPitch" rows="3" placeholder="What does the prototype help people do?"></textarea>
-            </label>
-            <div class="form-actions">
-              <button class="button" type="submit">Add project</button>
-              <button id="clearProjects" class="button button-ghost" type="button">Reset gallery</button>
+          <div class="project-intake-card">
+            <div>
+              <span class="pill">Google Sheet inputs</span>
+              <h3>One row per team</h3>
+              <p>Use a shared Sheet, or a Google Form feeding a Sheet, with these columns:</p>
             </div>
-            <p class="form-note">Static demo: entries and votes are saved in this browser. Use a backend such as Supabase or Firebase for shared event-wide uploads, IP checks and live vote totals.</p>
-          </form>
+            <div class="sheet-fields" aria-label="Recommended Google Sheet columns">
+              <span>Team</span>
+              <span>Project Title</span>
+              <span>Project URL</span>
+              <span>Image URL</span>
+              <span>Pitch</span>
+            </div>
+            <div class="form-actions">
+              <a id="projectSubmissionLink" class="button" href="#" aria-disabled="true">Project input sheet placeholder</a>
+              <a id="projectSheetLink" class="button button-secondary" href="#" aria-disabled="true">Gallery data source placeholder</a>
+            </div>
+            <p id="projectSourceStatus" class="form-note">Placeholder gallery: add a published Google Sheet CSV URL in event-config.js to load live submissions.</p>
+          </div>
 
           <div class="vote-panel">
             <div>
-              <span class="pill">Live gallery</span>
-              <h3>Project votes</h3>
-              <p id="voteStatus">Add projects, then vote for the one you want to see continue.</p>
+              <span class="pill">Non-anonymous voting</span>
+              <h3>Vote through Google Form</h3>
+              <p>Use a Form that collects names or NUS emails. Each project card can open the voting form, and results can be counted from the response Sheet.</p>
             </div>
+            <div class="form-actions">
+              <a id="votingFormLink" class="button" href="#" aria-disabled="true">Voting form placeholder</a>
+              <a id="voteResultsLink" class="button button-secondary" href="#" aria-disabled="true">Vote results placeholder</a>
+            </div>
+            <p id="voteStatus">Placeholder voting: add the Google Form and response Sheet links in event-config.js.</p>
             <div id="voteResults" class="vote-results" aria-live="polite"></div>
           </div>
         </div>
@@ -476,6 +478,7 @@ Then:
     <a href="#top">Back to top ↑</a>
   </footer>
 
+  <script src="event-config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

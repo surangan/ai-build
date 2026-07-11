@@ -48,8 +48,16 @@ document.querySelectorAll('.copy-button').forEach(button => {
       fallback.remove();
     }
 
+    if (!copied) {
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
     const old = button.innerText;
-    button.innerText = copied ? 'Copied' : 'Select text';
+    button.innerText = copied ? 'Copied' : 'Selected';
     setTimeout(() => button.innerText = old, 1400);
   });
 });
@@ -115,72 +123,240 @@ document.getElementById('resetTimer').addEventListener('click', () => {
 
 renderTimer();
 
-const projectForm = document.getElementById('projectForm');
 const projectGallery = document.getElementById('projectGallery');
 const voteResults = document.getElementById('voteResults');
 const voteStatus = document.getElementById('voteStatus');
-const clearProjects = document.getElementById('clearProjects');
-const projectsStorageKey = 'faculty-ai-build-projects';
-const voteStorageKey = 'faculty-ai-build-vote';
+const projectSourceStatus = document.getElementById('projectSourceStatus');
+const projectSubmissionLink = document.getElementById('projectSubmissionLink');
+const projectSheetLink = document.getElementById('projectSheetLink');
+const votingFormLink = document.getElementById('votingFormLink');
+const voteResultsLink = document.getElementById('voteResultsLink');
+const challengeConfig = window.challengeConfig || {};
 
-function loadProjects() {
-  try {
-    return JSON.parse(localStorage.getItem(projectsStorageKey)) || [];
-  } catch {
-    return [];
+function isConfiguredUrl(url) {
+  return Boolean(url && url !== '#');
+}
+
+function normaliseUrl(url) {
+  const trimmed = String(url || '').trim();
+  if (!trimmed || trimmed === '#') return '';
+  if (/^(https?:|data:|mailto:)/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function configureExternalLink(link, url, readyText, placeholderText) {
+  if (!link) return;
+
+  const configuredUrl = normaliseUrl(url);
+  link.textContent = configuredUrl ? readyText : placeholderText;
+  link.href = configuredUrl || '#';
+
+  if (configuredUrl) {
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.removeAttribute('aria-disabled');
+  } else {
+    link.removeAttribute('target');
+    link.removeAttribute('rel');
+    link.setAttribute('aria-disabled', 'true');
   }
 }
 
-function saveProjects(projects) {
-  localStorage.setItem(projectsStorageKey, JSON.stringify(projects));
-}
-
-function getStoredVote() {
-  return localStorage.getItem(voteStorageKey);
-}
-
-function placeholderImage(title) {
-  const safeTitle = title.replace(/[&<>]/g, character => ({
+function escapeSvg(text) {
+  return String(text || '').replace(/[&<>]/g, character => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;'
   }[character]));
+}
+
+function placeholderImage(project) {
+  const safeTeam = escapeSvg(project.team || 'NUS Computing');
+  const safeTitle = escapeSvg(project.title || 'Project preview').slice(0, 34);
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
       <rect width="960" height="600" fill="#eaf0f7"/>
       <rect x="54" y="54" width="852" height="492" rx="24" fill="#ffffff" stroke="#003d7c" stroke-opacity=".25"/>
-      <text x="90" y="170" fill="#ef7c00" font-family="Arial, sans-serif" font-size="34" font-weight="700">NUS Computing</text>
-      <text x="90" y="270" fill="#003d7c" font-family="Arial, sans-serif" font-size="68" font-weight="700">${safeTitle}</text>
-      <text x="90" y="350" fill="#52677d" font-family="Arial, sans-serif" font-size="30">Project preview</text>
+      <rect x="86" y="82" width="178" height="42" rx="6" fill="#003d7c"/>
+      <text x="108" y="111" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">NUS Computing</text>
+      <text x="90" y="230" fill="#ef7c00" font-family="Arial, sans-serif" font-size="34" font-weight="700">${safeTeam}</text>
+      <text x="90" y="310" fill="#003d7c" font-family="Arial, sans-serif" font-size="56" font-weight="700">${safeTitle}</text>
+      <text x="90" y="382" fill="#52677d" font-family="Arial, sans-serif" font-size="28">Project preview</text>
     </svg>
   `;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
-function readImageFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+function slugify(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
-function renderVoteResults(projects) {
+function normaliseKey(text) {
+  return String(text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function pick(row, keys) {
+  const rowByKey = Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [normaliseKey(key), value])
+  );
+  const found = keys.map(normaliseKey).find(key => rowByKey[key]);
+  return found ? String(rowByKey[found]).trim() : '';
+}
+
+function parseCsv(csv) {
+  const rows = [];
+  let row = [];
+  let value = '';
+  let quoted = false;
+
+  for (let index = 0; index < csv.length; index += 1) {
+    const character = csv[index];
+    const nextCharacter = csv[index + 1];
+
+    if (quoted) {
+      if (character === '"' && nextCharacter === '"') {
+        value += '"';
+        index += 1;
+      } else if (character === '"') {
+        quoted = false;
+      } else {
+        value += character;
+      }
+    } else if (character === '"') {
+      quoted = true;
+    } else if (character === ',') {
+      row.push(value);
+      value = '';
+    } else if (character === '\n') {
+      row.push(value);
+      rows.push(row);
+      row = [];
+      value = '';
+    } else if (character !== '\r') {
+      value += character;
+    }
+  }
+
+  row.push(value);
+  rows.push(row);
+
+  return rows.filter(items => items.some(item => String(item).trim()));
+}
+
+function csvToObjects(csv) {
+  const rows = parseCsv(csv);
+  const headers = rows.shift() || [];
+
+  return rows.map(row => Object.fromEntries(
+    headers.map((header, index) => [String(header).trim(), String(row[index] || '').trim()])
+  ));
+}
+
+async function fetchCsvRows(url) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Could not load CSV: ${response.status}`);
+  }
+
+  return csvToObjects(await response.text());
+}
+
+function mapProject(project, index) {
+  const row = project || {};
+  const team = pick(row, ['Team', 'Team Name']) || row.team || `Team ${String(index + 1).padStart(2, '0')}`;
+  const title = pick(row, ['Project Title', 'Title', 'Project']) || row.title || `${team} prototype`;
+  const url = pick(row, ['Project URL', 'Prototype URL', 'URL', 'Link']) || row.url || '';
+  const image = pick(row, ['Image URL', 'Screenshot URL', 'Image', 'Screenshot']) || row.image || '';
+  const pitch = pick(row, ['Pitch', 'One-sentence Pitch', 'Description', 'Summary']) || row.pitch || 'Project details will appear here after the team updates the Google Sheet.';
+  const id = slugify(`${team}-${title}`) || `project-${index + 1}`;
+
+  return {
+    id,
+    team,
+    title,
+    url: normaliseUrl(url),
+    image: normaliseUrl(image),
+    pitch
+  };
+}
+
+function fallbackProjects() {
+  const configuredProjects = challengeConfig.fallbackProjects || [];
+  if (configuredProjects.length) {
+    return configuredProjects.map(mapProject);
+  }
+
+  return Array.from({ length: 17 }, (_, index) => mapProject({}, index));
+}
+
+function projectVoteLabel(project) {
+  return `${project.team} - ${project.title}`;
+}
+
+function buildVoteUrl(project) {
+  const formUrl = normaliseUrl(challengeConfig.votingFormUrl);
+  if (!formUrl) return '';
+
+  try {
+    const url = new URL(formUrl);
+    if (challengeConfig.votingFormProjectField) {
+      url.searchParams.set(challengeConfig.votingFormProjectField, projectVoteLabel(project));
+    }
+    return url.toString();
+  } catch {
+    return formUrl;
+  }
+}
+
+function simpleText(text) {
+  return String(text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function teamNumber(text) {
+  const match = String(text || '').match(/\d+/);
+  return match ? String(Number(match[0])) : '';
+}
+
+function findProjectForVote(choice, projects) {
+  const simpleChoice = simpleText(choice);
+  const choiceTeamNumber = teamNumber(choice);
+  if (!simpleChoice) return null;
+
+  return projects.find(project => {
+    const label = simpleText(projectVoteLabel(project));
+    const title = simpleText(project.title);
+    const team = simpleText(project.team);
+    const projectTeamNumber = teamNumber(project.team);
+
+    return simpleChoice === label ||
+      simpleChoice === title ||
+      simpleChoice === team ||
+      simpleChoice.includes(label) ||
+      (title && simpleChoice.includes(title)) ||
+      (team && simpleChoice.includes(team)) ||
+      (choiceTeamNumber && choiceTeamNumber === projectTeamNumber);
+  }) || null;
+}
+
+function renderVoteResults(projects, voteCounts, resultsConfigured) {
   if (!voteResults) return;
   voteResults.innerHTML = '';
 
-  if (!projects.length) {
+  if (!resultsConfigured) {
     const empty = document.createElement('p');
-    empty.textContent = 'No project votes yet.';
+    empty.textContent = 'Vote totals placeholder: publish the Google Form response Sheet as CSV to show live counts here.';
     voteResults.appendChild(empty);
     return;
   }
 
-  const maxVotes = Math.max(...projects.map(project => project.votes), 1);
-  [...projects]
-    .sort((a, b) => b.votes - a.votes || a.title.localeCompare(b.title))
-    .forEach(project => {
+  const maxVotes = Math.max(...projects.map(project => voteCounts.get(project.id) || 0), 1);
+  projects
+    .map(project => ({ project, votes: voteCounts.get(project.id) || 0 }))
+    .sort((a, b) => b.votes - a.votes || a.project.team.localeCompare(b.project.team))
+    .forEach(({ project, votes }) => {
       const result = document.createElement('div');
       result.className = 'vote-result';
 
@@ -188,16 +364,16 @@ function renderVoteResults(projects) {
       top.className = 'vote-result-top';
 
       const title = document.createElement('span');
-      title.textContent = project.title;
+      title.textContent = project.team;
 
       const count = document.createElement('span');
-      count.textContent = `${project.votes} vote${project.votes === 1 ? '' : 's'}`;
+      count.textContent = `${votes} vote${votes === 1 ? '' : 's'}`;
 
       const bar = document.createElement('div');
       bar.className = 'vote-bar';
 
       const fill = document.createElement('span');
-      fill.style.width = `${Math.max(6, (project.votes / maxVotes) * 100)}%`;
+      fill.style.width = `${votes ? Math.max(6, (votes / maxVotes) * 100) : 0}%`;
 
       top.append(title, count);
       bar.appendChild(fill);
@@ -206,44 +382,29 @@ function renderVoteResults(projects) {
     });
 }
 
-function renderProjects() {
+function renderProjects(projects, voteCounts = new Map(), resultsConfigured = false) {
   if (!projectGallery) return;
 
-  const projects = loadProjects();
-  const storedVote = getStoredVote();
   projectGallery.innerHTML = '';
-
-  if (voteStatus) {
-    voteStatus.textContent = storedVote
-      ? 'Your vote has been recorded in this browser.'
-      : 'Add projects, then vote for the one you want to see continue. Voting is limited to one vote per browser on this static page.';
-  }
-
-  if (!projects.length) {
-    const empty = document.createElement('div');
-    empty.className = 'project-empty';
-    empty.textContent = 'No projects yet. Add the first team prototype above.';
-    projectGallery.appendChild(empty);
-    renderVoteResults(projects);
-    return;
-  }
 
   projects.forEach(project => {
     const card = document.createElement('article');
     card.className = 'project-card';
 
-    const imageLink = document.createElement('a');
-    imageLink.className = 'project-image-link';
-    imageLink.href = project.url;
-    imageLink.target = '_blank';
-    imageLink.rel = 'noopener noreferrer';
-    imageLink.title = `Open ${project.title}`;
+    const imageBox = project.url ? document.createElement('a') : document.createElement('div');
+    imageBox.className = 'project-image-link';
+    if (project.url) {
+      imageBox.href = project.url;
+      imageBox.target = '_blank';
+      imageBox.rel = 'noopener noreferrer';
+      imageBox.title = `Open ${project.title}`;
+    }
 
     const image = document.createElement('img');
-    image.src = project.image;
+    image.src = project.image || placeholderImage(project);
     image.alt = `${project.title} project preview`;
     image.loading = 'lazy';
-    imageLink.appendChild(image);
+    imageBox.appendChild(image);
 
     const body = document.createElement('div');
     body.className = 'project-card-body';
@@ -256,95 +417,149 @@ function renderProjects() {
     title.textContent = project.title;
 
     const pitch = document.createElement('p');
-    pitch.textContent = project.pitch || 'Prototype submitted for the Faculty AI Build Challenge.';
+    pitch.textContent = project.pitch;
 
     const actions = document.createElement('div');
     actions.className = 'project-card-actions';
 
     const voteCount = document.createElement('span');
     voteCount.className = 'vote-count';
-    voteCount.textContent = `${project.votes} vote${project.votes === 1 ? '' : 's'}`;
+    const votes = voteCounts.get(project.id) || 0;
+    voteCount.textContent = resultsConfigured
+      ? `${votes} vote${votes === 1 ? '' : 's'}`
+      : 'Votes in Google Form';
 
-    const voteButton = document.createElement('button');
-    voteButton.className = 'button button-secondary vote-button';
-    voteButton.type = 'button';
-    voteButton.dataset.projectId = project.id;
-    voteButton.textContent = storedVote === project.id ? 'Voted' : 'Vote';
-    voteButton.disabled = Boolean(storedVote);
+    const voteLink = document.createElement('a');
+    voteLink.className = 'button button-secondary vote-button';
+    voteLink.textContent = isConfiguredUrl(challengeConfig.votingFormUrl) ? 'Vote' : 'Voting placeholder';
 
-    actions.append(voteCount, voteButton);
+    const voteUrl = buildVoteUrl(project);
+    voteLink.href = voteUrl || '#';
+
+    if (voteUrl) {
+      voteLink.target = '_blank';
+      voteLink.rel = 'noopener noreferrer';
+    } else {
+      voteLink.setAttribute('aria-disabled', 'true');
+    }
+
+    actions.append(voteCount, voteLink);
     body.append(meta, title, pitch, actions);
-    card.append(imageLink, body);
+    card.append(imageBox, body);
     projectGallery.appendChild(card);
   });
-
-  renderVoteResults(projects);
 }
 
-if (projectForm) {
-  projectForm.addEventListener('submit', async event => {
-    event.preventDefault();
-    const data = new FormData(projectForm);
-    const team = String(data.get('teamName') || '').trim();
-    const title = String(data.get('projectTitle') || '').trim();
-    const url = String(data.get('projectUrl') || '').trim();
-    const imageUrl = String(data.get('imageUrl') || '').trim();
-    const pitch = String(data.get('projectPitch') || '').trim();
-    const file = data.get('projectImage');
+async function loadProjects() {
+  const projects = fallbackProjects();
+  const sheetUrl = normaliseUrl(challengeConfig.projectSheetCsvUrl);
 
-    if (!team || !title || !url) return;
+  renderProjects(projects);
 
-    let image = imageUrl || placeholderImage(title);
-    if (file && file.size) {
-      image = await readImageFile(file);
+  if (!sheetUrl) {
+    if (projectSourceStatus) {
+      projectSourceStatus.textContent = 'Placeholder gallery: add a published Google Sheet CSV URL in event-config.js to load live submissions.';
     }
+    return projects;
+  }
 
-    const projects = loadProjects();
-    projects.push({
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      team,
-      title,
-      url,
-      image,
-      pitch,
-      votes: 0
+  if (projectSourceStatus) {
+    projectSourceStatus.textContent = 'Loading project gallery from the published Google Sheet...';
+  }
+
+  try {
+    const sheetProjects = (await fetchCsvRows(sheetUrl)).map(mapProject).filter(project => project.team || project.title);
+    if (!sheetProjects.length) throw new Error('The published Sheet did not contain project rows.');
+
+    if (projectSourceStatus) {
+      projectSourceStatus.textContent = `Loaded ${sheetProjects.length} project${sheetProjects.length === 1 ? '' : 's'} from the published Google Sheet.`;
+    }
+    return sheetProjects;
+  } catch {
+    if (projectSourceStatus) {
+      projectSourceStatus.textContent = 'Could not load the published Google Sheet. Showing the 17-team placeholder gallery until the CSV link is updated.';
+    }
+    return projects;
+  }
+}
+
+async function loadVoteCounts(projects) {
+  const voteCounts = new Map(projects.map(project => [project.id, 0]));
+  const resultsUrl = normaliseUrl(challengeConfig.voteResultsCsvUrl);
+
+  if (!resultsUrl) {
+    renderVoteResults(projects, voteCounts, false);
+    return { voteCounts, resultsConfigured: false };
+  }
+
+  try {
+    const rows = await fetchCsvRows(resultsUrl);
+    rows.forEach(row => {
+      const choice = pick(row, [
+        challengeConfig.voteProjectColumn,
+        'Project',
+        'Project Vote',
+        'Vote',
+        'Favourite',
+        'Favorite',
+        'Choice'
+      ]);
+      const project = findProjectForVote(choice, projects);
+      if (project) {
+        voteCounts.set(project.id, (voteCounts.get(project.id) || 0) + 1);
+      }
     });
 
-    try {
-      saveProjects(projects);
-      projectForm.reset();
-      renderProjects();
-    } catch {
-      if (voteStatus) {
-        voteStatus.textContent = 'This browser could not save the project image. Try a smaller image or use an image URL.';
-      }
+    if (voteStatus) {
+      voteStatus.textContent = 'Vote totals are loaded from the published Google Form response Sheet.';
     }
-  });
+    renderVoteResults(projects, voteCounts, true);
+    return { voteCounts, resultsConfigured: true };
+  } catch {
+    if (voteStatus) {
+      voteStatus.textContent = 'Could not load vote totals yet. Check that the Google Form response Sheet is published as CSV.';
+    }
+    renderVoteResults(projects, voteCounts, false);
+    return { voteCounts, resultsConfigured: false };
+  }
 }
 
-if (projectGallery) {
-  projectGallery.addEventListener('click', event => {
-    const voteButton = event.target.closest('.vote-button');
-    if (!voteButton || getStoredVote()) return;
+async function initialiseProjectGallery() {
+  configureExternalLink(
+    projectSubmissionLink,
+    challengeConfig.projectSubmissionUrl,
+    'Open project input sheet',
+    'Project input sheet placeholder'
+  );
+  configureExternalLink(
+    projectSheetLink,
+    challengeConfig.projectSheetCsvUrl,
+    'Open gallery data source',
+    'Gallery data source placeholder'
+  );
+  configureExternalLink(
+    votingFormLink,
+    challengeConfig.votingFormUrl,
+    'Open voting form',
+    'Voting form placeholder'
+  );
+  configureExternalLink(
+    voteResultsLink,
+    challengeConfig.voteResultsUrl || challengeConfig.voteResultsCsvUrl,
+    'Open vote results',
+    'Vote results placeholder'
+  );
 
-    const projects = loadProjects();
-    const project = projects.find(item => item.id === voteButton.dataset.projectId);
-    if (!project) return;
-
-    project.votes += 1;
-    saveProjects(projects);
-    localStorage.setItem(voteStorageKey, project.id);
-    renderProjects();
-  });
+  const projects = await loadProjects();
+  const { voteCounts, resultsConfigured } = await loadVoteCounts(projects);
+  renderProjects(projects, voteCounts, resultsConfigured);
 }
 
-if (clearProjects) {
-  clearProjects.addEventListener('click', () => {
-    if (!confirm('Reset the project gallery and votes saved in this browser?')) return;
-    localStorage.removeItem(projectsStorageKey);
-    localStorage.removeItem(voteStorageKey);
-    renderProjects();
-  });
-}
+document.addEventListener('click', event => {
+  const disabledLink = event.target.closest('a[aria-disabled="true"]');
+  if (disabledLink) {
+    event.preventDefault();
+  }
+});
 
-renderProjects();
+initialiseProjectGallery();
