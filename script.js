@@ -212,6 +212,55 @@ function pick(row, keys) {
   return found ? String(rowByKey[found]).trim() : '';
 }
 
+const teamColumnKeys = ['Choose Your Team', 'Team name', 'Team Name', 'Team'];
+const timestampColumnKeys = ['Timestamp', 'Time stamp', 'Time Stamp', 'Submitted At', 'Submission time'];
+
+function submissionTimestampValue(value) {
+  const text = String(value || '').trim();
+  if (!text) return Number.NEGATIVE_INFINITY;
+
+  const parsed = Date.parse(text);
+  if (Number.isFinite(parsed)) return parsed;
+
+  const match = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i);
+  if (!match) return Number.NEGATIVE_INFINITY;
+
+  let first = Number(match[1]);
+  let second = Number(match[2]);
+  const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3]);
+  let hours = Number(match[4] || 0);
+  const minutes = Number(match[5] || 0);
+  const seconds = Number(match[6] || 0);
+  const meridiem = String(match[7] || '').toUpperCase();
+
+  if (meridiem === 'PM' && hours < 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+
+  if (first > 12 && second <= 12) {
+    [first, second] = [second, first];
+  }
+
+  return new Date(year, first - 1, second, hours, minutes, seconds).getTime();
+}
+
+function dedupeProjectRows(rows) {
+  const latestByTeam = new Map();
+
+  rows.forEach((row, index) => {
+    const teamKey = normaliseKey(pick(row, teamColumnKeys)) || `row-${index}`;
+    const timestamp = submissionTimestampValue(pick(row, timestampColumnKeys));
+    const current = latestByTeam.get(teamKey);
+
+    if (!current || timestamp > current.timestamp || (timestamp === current.timestamp && index > current.index)) {
+      latestByTeam.set(teamKey, { row, index, timestamp });
+    }
+  });
+
+  return Array.from(latestByTeam.values())
+    .sort((a, b) => a.index - b.index)
+    .map(entry => entry.row);
+}
+
 function parseCsv(csv) {
   const rows = [];
   let row = [];
@@ -383,7 +432,7 @@ async function fetchProjectRows(url) {
 
 function mapProject(project, index) {
   const row = project || {};
-  const team = pick(row, ['Team', 'Team Name', 'Choose Your Team']) || row.team || `Team ${String(index + 1).padStart(2, '0')}`;
+  const team = pick(row, teamColumnKeys) || row.team || `Team ${String(index + 1).padStart(2, '0')}`;
   const title = pick(row, ['Project Title', 'Title', 'Project']) || row.title || `${team} prototype`;
   const url = pick(row, ['Project URL', 'Prototype URL', 'URL', 'Link']) || row.url || '';
   const image = pick(row, ['Image URL', 'Project Image', 'Screenshot URL', 'Image', 'Screenshot']) || row.image || challengeConfig.defaultProjectImage || '';
@@ -601,11 +650,17 @@ async function loadProjects() {
 
   for (const source of sources) {
     try {
-      const sheetProjects = (await fetchProjectRows(source)).map(mapProject).filter(project => project.team || project.title);
+      const sourceRows = await fetchProjectRows(source);
+      const projectRows = dedupeProjectRows(sourceRows);
+      const duplicateCount = sourceRows.length - projectRows.length;
+      const sheetProjects = projectRows.map(mapProject).filter(project => project.team || project.title);
       if (!sheetProjects.length) throw new Error('The data source did not contain project rows.');
 
       if (projectSourceStatus) {
-        projectSourceStatus.textContent = `Loaded ${sheetProjects.length} project${sheetProjects.length === 1 ? '' : 's'} from the ${sourceLabel(source)}.`;
+        const duplicateNote = duplicateCount
+          ? ` Removed ${duplicateCount} duplicate team submission${duplicateCount === 1 ? '' : 's'}.`
+          : '';
+        projectSourceStatus.textContent = `Loaded ${sheetProjects.length} project${sheetProjects.length === 1 ? '' : 's'} from the ${sourceLabel(source)}.${duplicateNote}`;
       }
       return sheetProjects;
     } catch {
