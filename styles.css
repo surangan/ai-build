@@ -500,6 +500,17 @@ nav a:hover {
   box-shadow: none;
 }
 
+.timeline-inline-link {
+  color: var(--blue);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.timeline-inline-link:hover {
+  color: var(--orange);
+}
+
 .timer-panel,
 .submit-panel {
   display: grid;
