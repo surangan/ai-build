@@ -252,7 +252,7 @@ function mapProject(project, index) {
   const title = pick(row, ['Project Title', 'Title', 'Project']) || row.title || `${team} prototype`;
   const url = pick(row, ['Project URL', 'Prototype URL', 'URL', 'Link']) || row.url || '';
   const image = pick(row, ['Image URL', 'Screenshot URL', 'Image', 'Screenshot']) || row.image || challengeConfig.defaultProjectImage || '';
-  const pitch = pick(row, ['Description', 'One-line Description', 'Pitch', 'One-sentence Pitch', 'Summary']) || row.pitch || 'Dummy text.';
+  const pitch = pick(row, ['Description', 'One-line Description', 'Pitch', 'One-sentence Pitch', 'Summary']) || row.pitch || 'This is a place holder one sentence project description.';
   const id = slugify(`${team}-${title}`) || `project-${index + 1}`;
 
   return {
