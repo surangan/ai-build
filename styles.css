@@ -405,6 +405,17 @@ nav a:hover {
   margin: 0;
 }
 
+.card-inline-link {
+  color: var(--blue);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.card-inline-link:hover {
+  color: var(--orange);
+}
+
 .success-banner {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
