@@ -405,6 +405,11 @@ nav a:hover {
   margin: 0;
 }
 
+.phrase-strong {
+  color: var(--text);
+  font-weight: 900;
+}
+
 .card-inline-link {
   color: var(--blue);
   font-weight: 800;
