@@ -24,6 +24,8 @@ Keep the Sheet shared so anyone with the link can view it. The gallery currently
 - `Project URL`
 - `Project Image`
 
+`Project Image` can be a direct image URL or a Google Drive share link. For Google Drive thumbnails to appear publicly, make sure the uploaded image file can be viewed by anyone with the link.
+
 If the Google Sheet is unavailable or has no project rows yet, the site falls back to `projects.csv`. Each fallback row supports:
 
 - `Team`

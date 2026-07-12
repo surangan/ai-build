@@ -144,6 +144,30 @@ function normaliseResourceUrl(url) {
   return `https://${trimmed}`;
 }
 
+function googleDriveFileId(url) {
+  try {
+    const parsed = new URL(normaliseUrl(url));
+    if (parsed.hostname !== 'drive.google.com') return '';
+
+    const pathMatch = parsed.pathname.match(/\/file\/d\/([^/]+)/);
+    return pathMatch?.[1] || parsed.searchParams.get('id') || '';
+  } catch {
+    return '';
+  }
+}
+
+function normaliseImageUrl(url) {
+  const trimmed = String(url || '').trim();
+  if (!trimmed || trimmed === '#') return '';
+
+  const driveFileId = googleDriveFileId(trimmed);
+  if (driveFileId) {
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveFileId)}&sz=w1200`;
+  }
+
+  return normaliseUrl(trimmed);
+}
+
 function escapeSvg(text) {
   return String(text || '').replace(/[&<>]/g, character => ({
     '&': '&amp;',
@@ -371,7 +395,7 @@ function mapProject(project, index) {
     team,
     title,
     url: normaliseUrl(url),
-    image: normaliseUrl(image),
+    image: normaliseImageUrl(image),
     pitch
   };
 }
@@ -497,6 +521,11 @@ function renderProjects(projects, voteCounts = new Map(), resultsConfigured = fa
     image.src = project.image || placeholderImage(project);
     image.alt = `${project.title} image`;
     image.loading = 'lazy';
+    image.addEventListener('error', () => {
+      if (image.dataset.fallbackApplied) return;
+      image.dataset.fallbackApplied = 'true';
+      image.src = placeholderImage(project);
+    });
     imageBox.appendChild(image);
 
     const body = document.createElement('div');
