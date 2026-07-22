@@ -460,6 +460,16 @@ nav a:hover {
 
 .success-banner p { color: var(--muted); }
 
+.evaluation-banner {
+  margin-top: 18px;
+  border-color: rgba(239, 124, 0, .30);
+  background: linear-gradient(135deg, rgba(239, 124, 0, .10), rgba(0, 61, 124, .05));
+}
+
+.evaluation-grid {
+  margin-top: 18px;
+}
+
 .timeline {
   display: grid;
   gap: 14px;
