@@ -9,6 +9,74 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=winner-prize-lines" />
+  <style>
+    .prompt-disclosure {
+      border-top: 1px solid var(--line);
+      background: #f8fbff;
+    }
+
+    .prompt-disclosure summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 20px;
+      color: var(--blue);
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .prompt-disclosure summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .prompt-disclosure summary::after {
+      content: "+";
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--orange);
+      font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .prompt-disclosure[open] summary::after {
+      content: "-";
+    }
+
+    .prompt-summary-title {
+      display: block;
+      font-weight: 800;
+    }
+
+    .prompt-summary-note {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: .88rem;
+      font-weight: 500;
+    }
+
+    .prompt-disclosure pre {
+      border-top: 1px solid var(--line);
+      max-height: min(620px, 70vh);
+      overflow: auto;
+    }
+
+    @media (max-width: 640px) {
+      .prompt-disclosure summary {
+        align-items: flex-start;
+        padding: 18px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="noise"></div>
@@ -291,7 +359,14 @@
             <span>Publish your project</span>
             <button class="copy-button" data-copy="prompt1">Copy</button>
           </div>
-          <pre id="prompt1">@Sites
+          <details class="prompt-disclosure">
+            <summary>
+              <span>
+                <span class="prompt-summary-title">Full @Sites publishing prompt</span>
+                <span class="prompt-summary-note">Project brief, requirements, quality check and publishing steps</span>
+              </span>
+            </summary>
+            <pre id="prompt1">@Sites
 
 Build, test, and publish a polished website for our hackathon project.
 
@@ -383,6 +458,7 @@ After completing and validating the website:
 Do not stop after merely generating source code. Continue through previewing, testing, correcting, saving, and publishing the finished Site.
 
 If deployment is blocked by account permissions or workspace policy, identify the exact blocked step and leave the fully tested Site ready for an organiser to publish.</pre>
+          </details>
         </article>
       </div>
     </section>
