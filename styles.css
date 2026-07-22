@@ -451,7 +451,7 @@ nav a:hover {
 }
 
 .success-banner h3,
-.prize-banner h3 {
+.prize-copy h3 {
   margin: 14px 0 0;
   color: var(--blue);
   font-family: "Space Grotesk", Inter, system-ui, sans-serif;
@@ -757,11 +757,16 @@ pre {
 
 .score-card h3 { margin: 18px 0 8px; }
 
+.prize-showcase {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+}
+
 .prize-banner {
   display: flex;
   align-items: center;
   gap: clamp(20px, 4vw, 32px);
-  margin-top: 22px;
   padding: clamp(28px, 4vw, 40px);
   border-radius: 8px;
   border: 1px solid rgba(239, 124, 0, .30);
@@ -783,8 +788,95 @@ pre {
 }
 
 .prize-banner p {
-  margin: 3px 0 0;
+  margin: 10px 0 0;
   color: var(--muted);
+  max-width: 760px;
+}
+
+.prize-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 18px;
+}
+
+.prize-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 190px;
+  padding: clamp(22px, 3vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 12px 28px rgba(16, 42, 67, .06);
+}
+
+.prize-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: var(--blue);
+}
+
+.prize-card-featured {
+  border-color: rgba(239, 124, 0, .42);
+  background:
+    linear-gradient(135deg, rgba(239, 124, 0, .12), rgba(255, 255, 255, .72) 48%),
+    var(--card);
+}
+
+.prize-card-featured::before {
+  background: var(--orange);
+}
+
+.prize-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.prize-rank {
+  color: var(--blue);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.prize-card-featured .prize-rank {
+  color: var(--orange);
+}
+
+.prize-type {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 61, 124, .16);
+  border-radius: 999px;
+  color: var(--blue);
+  background: rgba(255, 255, 255, .72);
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.prize-card h4 {
+  margin: 0 0 8px;
+  color: var(--blue);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: clamp(1.2rem, 2vw, 1.45rem);
+  line-height: 1.15;
+}
+
+.prize-card p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 650;
+  line-height: 1.55;
 }
 
 .submit-shell {
@@ -1205,7 +1297,8 @@ footer a:hover { color: #fff; }
   }
 
   .project-form,
-  .project-gallery {
+  .project-gallery,
+  .prize-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1250,7 +1343,8 @@ footer a:hover { color: #fff; }
   .timer-panel,
   .submit-panel,
   .submit-shell,
-  .prize-banner {
+  .prize-banner,
+  .prize-card {
     padding: 20px;
   }
 }
