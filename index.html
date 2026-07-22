@@ -70,6 +70,10 @@
       overflow: auto;
     }
 
+    .section-heading.heading-wide {
+      max-width: none;
+    }
+
     @media (max-width: 640px) {
       .prompt-disclosure summary {
         align-items: flex-start;
@@ -92,8 +96,8 @@
     <nav>
       <a href="#challenge">Challenge</a>
       <a href="#schedule">Schedule</a>
-      <a href="#ideas">Ideas</a>
       <a href="#submit">Gallery</a>
+      <a href="#judging">Prizes</a>
     </nav>
   </header>
 
@@ -183,7 +187,7 @@
     </section>
 
     <section id="schedule" class="section section-alt">
-      <div class="section-heading">
+      <div class="section-heading heading-wide">
         <span>Run of show</span>
         <h2>A fast, focused 100-minute sprint</h2>
       </div>
@@ -347,7 +351,7 @@
     </section>
 
     <section id="tools" class="section tools-section">
-      <div class="section-heading">
+      <div class="section-heading heading-wide">
         <span>02. Build with AI</span>
         <h2>Use whatever gets your team moving</h2>
       </div>
@@ -393,13 +397,12 @@
       <div class="section-heading">
         <span>03 · Publish your project</span>
         <h2>Copy, adapt and build</h2>
-        <p>Copy this prompt into Codex, complete the project brief, and publish a polished project site with Sites.</p>
       </div>
 
       <div class="prompt-grid">
         <article class="prompt-card" style="grid-column: 1 / -1;">
           <div class="prompt-topline">
-            <span>Publish your project</span>
+            <span>Copy this prompt into Codex, complete the project brief, and publish a polished project site with Sites.</span>
             <button class="copy-button" data-copy="prompt1">Copy</button>
           </div>
           <details class="prompt-disclosure">
